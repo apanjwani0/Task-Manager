@@ -4,11 +4,13 @@ const User=require('../models/user')
 const auth=require('../middleware/auth')
 const { ResumeToken } = require('mongodb')
 const { remove } = require('../models/user')
+const {sendWelcomeEmail,sendGoodbyeEmail} =require('../emails/account')
 
 router.post('/users',async (req, res) => {
     const user = new User(req.body)
     try{
         await user.save()
+        sendWelcomeEmail(user.email,user.name) //sgmail returns promise we can wait if we want to
         const token=await user.generateAuthToken()
         console.log('Signup Successful')
         res.send({user,token})
@@ -108,6 +110,8 @@ router.delete('/users/profile',auth,async (req,res)=>{
         //     res.status(404).send()
         // }
         await req.user.remove()
+        sendGoodbyeEmail(req.user.email,req.user.name)
+        console.log(`${req.user.name}'s Account deleted !`)
         res.send(req.user)
     }catch(e){
         res.status(500).send(e)
